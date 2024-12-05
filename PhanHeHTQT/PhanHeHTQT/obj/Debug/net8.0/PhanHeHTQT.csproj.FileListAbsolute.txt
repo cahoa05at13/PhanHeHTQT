@@ -1,0 +1,7 @@
+E:\PhanHeHTQT\PhanHeHTQT\PhanHeHTQT\obj\Debug\net8.0\PhanHeHTQT.csproj.AssemblyReference.cache
+E:\PhanHeHTQT\PhanHeHTQT\PhanHeHTQT\obj\Debug\net8.0\PhanHeHTQT.GeneratedMSBuildEditorConfig.editorconfig
+E:\PhanHeHTQT\PhanHeHTQT\PhanHeHTQT\obj\Debug\net8.0\PhanHeHTQT.AssemblyInfoInputs.cache
+E:\PhanHeHTQT\PhanHeHTQT\PhanHeHTQT\obj\Debug\net8.0\PhanHeHTQT.AssemblyInfo.cs
+E:\PhanHeHTQT\PhanHeHTQT\PhanHeHTQT\obj\Debug\net8.0\PhanHeHTQT.csproj.CoreCompileInputs.cache
+E:\PhanHeHTQT\PhanHeHTQT\PhanHeHTQT\obj\Debug\net8.0\PhanHeHTQT.MvcApplicationPartsAssemblyInfo.cs
+E:\PhanHeHTQT\PhanHeHTQT\PhanHeHTQT\obj\Debug\net8.0\PhanHeHTQT.MvcApplicationPartsAssemblyInfo.cache

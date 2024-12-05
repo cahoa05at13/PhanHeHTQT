@@ -1,0 +1,6 @@
+@PhanHeHTQT_HostAddress = http://localhost:5182
+
+GET {{PhanHeHTQT_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
