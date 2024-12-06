@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using PhanHeHTQT.API;
 using PhanHeHTQT.Models;
+using PhanHeHTQT.Models.DM;
 
 namespace PhanHeHTQT.Controllers.HTQT
 {
@@ -19,12 +20,24 @@ namespace PhanHeHTQT.Controllers.HTQT
             ApiServices_ = services;
         }
 
+        private async Task<List<TbToChucHopTacQuocTe>> TbToChucHopTacQuocTes()
+        {
+            List<TbToChucHopTacQuocTe> tbToChucHopTacQuocTes = await ApiServices_.GetAll<TbToChucHopTacQuocTe>("/api/htqt/ToChucHopTacQuocTe");
+            List<DmQuocTich> dmQuocTiches = await ApiServices_.GetAll<DmQuocTich>("/api/htqt/QuocTich");
+            List<DmHinhThucHopTac> dmHinhThucHopTacs = await ApiServices_.GetAll<DmHinhThucHopTac>("/api/htqt/HinhThucHopTac");
+            tbToChucHopTacQuocTes.ForEach(item =>
+            {
+                item.IdQuocGiaNavigation = dmQuocTiches.FirstOrDefault(x => x.IdQuocTich == item.IdQuocGia);
+            });
+            return tbToChucHopTacQuocTes;
+        }
+
         // GET: TbToChucHopTacQuocTes
         public async Task<IActionResult> Index()
         {
             try
             {
-                List<TbToChucHopTacQuocTe> getall = await ApiServices_.GetAll<IdQuocGiaNavigation>("/api/htqt/ToChucHopTacQuocTe");
+                List<TbToChucHopTacQuocTe> getall = await ApiServices_.GetAll<TbToChucHopTacQuocTe>("/api/htqt/ToChucHopTacQuocTe");
                 // Lấy data từ các table khác có liên quan (khóa ngoài) để hiển thị trên Index
                 return View(getall);
 
@@ -43,10 +56,8 @@ namespace PhanHeHTQT.Controllers.HTQT
             {
                 return NotFound();
             }
-
-            var tbToChucHopTacQuocTe = await _context.TbToChucHopTacQuocTes
-                .Include(t => t.IdQuocGiaNavigation)
-                .FirstOrDefaultAsync(m => m.IdToChucHopTacQuocTe == id);
+            var tbToChucHopTacQuocTes = await TbToChucHopTacQuocTes();
+            var tbToChucHopTacQuocTe = tbToChucHopTacQuocTes.FirstOrDefault(m => m.IdToChucHopTacQuocTe == id);
             if (tbToChucHopTacQuocTe == null)
             {
                 return NotFound();
@@ -56,10 +67,10 @@ namespace PhanHeHTQT.Controllers.HTQT
         }
 
         // GET: TbToChucHopTacQuocTes/Create
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
-            ViewData["IdQuocGia"] = new SelectList(_context.DmQuocTiches, "IdQuocTich", "IdQuocTich");
-            ViewData["IdHinhThucHopTac"] = new SelectList(_context.DmHinhThucHopTacs, "IdHinhThucHopTac", "TenHinhThuc"); // Adjust the fields as necessary
+            ViewData["IdQuocGia"] = new SelectList(await ApiServices_.GetAll<DmQuocTich>("/api/dm/QuocTich"), "IdQuocTich", "IdQuocTich");
+            ViewData["IdHinhThucHopTac"] = new SelectList(await ApiServices_.GetAll<DmHinhThucHopTac>("/api/dm/HinhThucHopTac"), "IdHinhThucHopTac", "TenHinhThuc"); // Adjust the fields as necessary
 
 
 
@@ -75,12 +86,11 @@ namespace PhanHeHTQT.Controllers.HTQT
         {
             if (ModelState.IsValid)
             {
-                _context.Add(tbToChucHopTacQuocTe);
-                await _context.SaveChangesAsync();
+                await ApiServices_.Create<TbToChucHopTacQuocTe>("/api/htqt/ToChucHopTacDoanhNghiep", tbToChucHopTacQuocTe);
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["IdQuocGia"] = new SelectList(_context.DmQuocTiches, "IdQuocTich", "IdQuocTich", tbToChucHopTacQuocTe.IdQuocGia);
-            ViewData["IdHinhThucHopTac"] = new SelectList(_context.DmHinhThucHopTacs, "IdHinhThucHopTac", "TenHinhThuc");
+            ViewData["IdQuocGia"] = new SelectList(await ApiServices_.GetAll<DmQuocTich>("/api/dm/QuocTich"), "IdQuocTich", "IdQuocTich");
+            ViewData["IdHinhThucHopTac"] = new SelectList(await ApiServices_.GetAll<DmHinhThucHopTac>("/api/dm/HinhThucHopTac"), "IdHinhThucHopTac", "TenHinhThuc");
             return View(tbToChucHopTacQuocTe);
         }
 
@@ -92,12 +102,12 @@ namespace PhanHeHTQT.Controllers.HTQT
                 return NotFound();
             }
 
-            var tbToChucHopTacQuocTe = await _context.TbToChucHopTacQuocTes.FindAsync(id);
+            var tbToChucHopTacQuocTe = await ApiServices_.GetId<TbToChucHopTacQuocTe>("/api/htqt/ToChucHopTacQuocTe", id ?? 0);
             if (tbToChucHopTacQuocTe == null)
             {
                 return NotFound();
             }
-            ViewData["IdQuocGia"] = new SelectList(_context.DmQuocTiches, "IdQuocTich", "IdQuocTich", tbToChucHopTacQuocTe.IdQuocGia);
+            ViewData["IdQuocGia"] = new SelectList(await ApiServices_.GetAll<DmQuocTich>("/api/dm/QuocTich"), "IdQuocTich", "IdQuocTich");
             return View(tbToChucHopTacQuocTe);
         }
 
@@ -117,12 +127,11 @@ namespace PhanHeHTQT.Controllers.HTQT
             {
                 try
                 {
-                    _context.Update(tbToChucHopTacQuocTe);
-                    await _context.SaveChangesAsync();
+                    await ApiServices_.Update<TbToChucHopTacQuocTe>("/api/htqt/ToChucHopTacQuocTe", id, tbToChucHopTacQuocTe);
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!TbToChucHopTacQuocTeExists(tbToChucHopTacQuocTe.IdToChucHopTacQuocTe))
+                    if (await TbToChucHopTacQuocTeExists(tbToChucHopTacQuocTe.IdToChucHopTacQuocTe) == false)
                     {
                         return NotFound();
                     }
@@ -133,7 +142,7 @@ namespace PhanHeHTQT.Controllers.HTQT
                 }
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["IdQuocGia"] = new SelectList(_context.DmQuocTiches, "IdQuocTich", "IdQuocTich", tbToChucHopTacQuocTe.IdQuocGia);
+            ViewData["IdQuocGia"] = new SelectList(await ApiServices_.GetAll<DmQuocTich>("/api/dm/QuocTich"), "IdQuocTich", "IdQuocTich");
             return View(tbToChucHopTacQuocTe);
         }
 
@@ -144,10 +153,8 @@ namespace PhanHeHTQT.Controllers.HTQT
             {
                 return NotFound();
             }
-
-            var tbToChucHopTacQuocTe = await _context.TbToChucHopTacQuocTes
-                .Include(t => t.IdQuocGiaNavigation)
-                .FirstOrDefaultAsync(m => m.IdToChucHopTacQuocTe == id);
+            var tbToChucHopTacQuocTes = await ApiServices_.GetAll<TbToChucHopTacQuocTe>("/api/htqt/ToChucHopTacQuocTe");
+            var tbToChucHopTacQuocTe = tbToChucHopTacQuocTes.FirstOrDefault(m => m.IdToChucHopTacQuocTe == id);
             if (tbToChucHopTacQuocTe == null)
             {
                 return NotFound();
@@ -161,19 +168,14 @@ namespace PhanHeHTQT.Controllers.HTQT
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var tbToChucHopTacQuocTe = await _context.TbToChucHopTacQuocTes.FindAsync(id);
-            if (tbToChucHopTacQuocTe != null)
-            {
-                _context.TbToChucHopTacQuocTes.Remove(tbToChucHopTacQuocTe);
-            }
-                await _context.SaveChangesAsync();
-           
+            await ApiServices_.Delete<TbToChucHopTacQuocTe>("/api/htqt/ToChucHopTacQuocTe", id);
             return RedirectToAction(nameof(Index));
         }
 
-        private bool TbToChucHopTacQuocTeExists(int id)
+        private async Task<bool> TbToChucHopTacQuocTeExists(int id)
         {
-            return _context.TbToChucHopTacQuocTes.Any(e => e.IdToChucHopTacQuocTe == id);
+            var tbToChucHopTacQuocTes = await ApiServices_.GetAll<TbToChucHopTacQuocTe>("/api/htqt/ToChucHopTacQuocTe");
+            return tbToChucHopTacQuocTes.Any(e => e.IdToChucHopTacQuocTe == id);
         }
     }
 }
