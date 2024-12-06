@@ -6,23 +6,35 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using PhanHeHTQT.Models;
-
+using PhanHeHTQT.Models.DM;
+using PhanHeHTQT.API;
 namespace PhanHeHTQT.Controllers.HTQT
 {
     public class TbThongTinHopTacsController : Controller
     {
-        private readonly HemisContext _context;
+        private readonly ApiServices ApiServices_;
 
-        public TbThongTinHopTacsController(HemisContext context)
+        public TbThongTinHopTacsController(ApiServices services)
         {
-            _context = context;
+            ApiServices_ = services;
         }
-
+        private async Task<List<TbThongTinHopTac>> TbThongTinHopTacs()
+        {
+            List<TbThongTinHopTac> tbThongTinHopTacs = await ApiServices_.GetAll<TbThongTinHopTac>("/api/htqt/thongtinhoptac");
+            List<DmHinhThucHopTac> dmHinhThucHopTacs = await ApiServices_.GetAll<DmHinhThucHopTac>("/api/dm/HinhThucHopTac");
+            List<TbToChucHopTacQuocTe> tbToChucHopTacQuocTes = await ApiServices_.GetAll<TbToChucHopTacQuocTe>("/api/htqt/ToChucHopTacQuocTe");
+            tbThongTinHopTacs.ForEach(item =>
+            {
+                item.IdHinhThucHopTacNavigation = dmHinhThucHopTacs.FirstOrDefault(x => x.IdHinhThucHopTac == item.IdHinhThucHopTac);
+                item.IdToChucHopTacNavigation = tbToChucHopTacQuocTes.FirstOrDefault(x => x.IdToChucHopTacQuocTe == item.IdToChucHopTac);
+            });
+            return tbThongTinHopTacs;
+        }
         // GET: TbThongTinHopTacs
         public async Task<IActionResult> Index()
         {
-            var hemisContext = _context.TbThongTinHopTacs.Include(t => t.IdHinhThucHopTacNavigation).Include(t => t.IdToChucHopTacNavigation);
-            return View(await hemisContext.ToListAsync());
+            List<TbThongTinHopTac> getall = await TbThongTinHopTacs();
+            return View(getall);
         }
 
         // GET: TbThongTinHopTacs/Details/5
@@ -33,10 +45,8 @@ namespace PhanHeHTQT.Controllers.HTQT
                 return NotFound();
             }
 
-            var tbThongTinHopTac = await _context.TbThongTinHopTacs
-                .Include(t => t.IdHinhThucHopTacNavigation)
-                .Include(t => t.IdToChucHopTacNavigation)
-                .FirstOrDefaultAsync(m => m.IdThongTinHopTac == id);
+            var tbThongTinHopTacs = await TbThongTinHopTacs();
+            var tbThongTinHopTac = tbThongTinHopTacs.FirstOrDefault(m => m.IdThongTinHopTac == id);
             if (tbThongTinHopTac == null)
             {
                 return NotFound();
@@ -46,10 +56,10 @@ namespace PhanHeHTQT.Controllers.HTQT
         }
 
         // GET: TbThongTinHopTacs/Create
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
-            ViewData["IdHinhThucHopTac"] = new SelectList(_context.DmHinhThucHopTacs, "IdHinhThucHopTac", "IdHinhThucHopTac");
-            ViewData["IdToChucHopTac"] = new SelectList(_context.TbToChucHopTacQuocTes, "IdToChucHopTacQuocTe", "IdToChucHopTacQuocTe");
+            ViewData["IdHinhThucHopTac"] = new SelectList(await ApiServices_.GetAll<DmHinhThucHopTac>("/api/dm/HinhThucHopTac"), "IdHinhThucHopTac", "HinhThucHopTac");
+            ViewData["IdToChucHopTac"] = new SelectList(await ApiServices_.GetAll<TbToChucHopTacQuocTe>("/api/htqt/ToChucHopTacQuocTe"), "IdToChucHopTacQuocTe", "ToChucHopTacQuocTe");
             return View();
         }
 
@@ -62,12 +72,11 @@ namespace PhanHeHTQT.Controllers.HTQT
         {
             if (ModelState.IsValid)
             {
-                _context.Add(tbThongTinHopTac);
-                await _context.SaveChangesAsync();
+                await ApiServices_.Create<TbThongTinHopTac>("/api/htqt/ThongTinHopTac", tbThongTinHopTac);
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["IdHinhThucHopTac"] = new SelectList(_context.DmHinhThucHopTacs, "IdHinhThucHopTac", "IdHinhThucHopTac", tbThongTinHopTac.IdHinhThucHopTac);
-            ViewData["IdToChucHopTac"] = new SelectList(_context.TbToChucHopTacQuocTes, "IdToChucHopTacQuocTe", "IdToChucHopTacQuocTe", tbThongTinHopTac.IdToChucHopTac);
+            ViewData["IdHinhThucHopTac"] = new SelectList(await ApiServices_.GetAll<DmHinhThucHopTac>("/api/dm/HinhThucHopTac"), "IdHinhThucHopTac", "HinhThucHopTac", tbThongTinHopTac.IdHinhThucHopTac);
+            ViewData["IdToChucHopTac"] = new SelectList(await ApiServices_.GetAll<TbToChucHopTacQuocTe>("/api/htqt/ToChucHopTacQuocTe"), "IdToChucHopTacQuocTe", "ToChucHopTacQuocTe", tbThongTinHopTac.IdToChucHopTac);
             return View(tbThongTinHopTac);
         }
 
@@ -79,13 +88,13 @@ namespace PhanHeHTQT.Controllers.HTQT
                 return NotFound();
             }
 
-            var tbThongTinHopTac = await _context.TbThongTinHopTacs.FindAsync(id);
+            var tbThongTinHopTac = await ApiServices_.GetId<TbThongTinHopTac>("/api/htqt/ThongTinHoptac", id ?? 0);
             if (tbThongTinHopTac == null)
             {
                 return NotFound();
             }
-            ViewData["IdHinhThucHopTac"] = new SelectList(_context.DmHinhThucHopTacs, "IdHinhThucHopTac", "IdHinhThucHopTac", tbThongTinHopTac.IdHinhThucHopTac);
-            ViewData["IdToChucHopTac"] = new SelectList(_context.TbToChucHopTacQuocTes, "IdToChucHopTacQuocTe", "IdToChucHopTacQuocTe", tbThongTinHopTac.IdToChucHopTac);
+            ViewData["IdHinhThucHopTac"] = new SelectList(await ApiServices_.GetAll<DmHinhThucHopTac>("/api/dm/HinhThucHopTac"), "IdHinhThucHopTac", "HinhThucHopTac", tbThongTinHopTac.IdHinhThucHopTac);
+            ViewData["IdToChucHopTac"] = new SelectList(await ApiServices_.GetAll<TbToChucHopTacQuocTe>("/api/htqt/ToChucHopTacQuocTe"), "IdToChucHopTacQuocTe", "ToChucHopTacQuocTe", tbThongTinHopTac.IdToChucHopTac);
             return View(tbThongTinHopTac);
         }
 
@@ -105,12 +114,11 @@ namespace PhanHeHTQT.Controllers.HTQT
             {
                 try
                 {
-                    _context.Update(tbThongTinHopTac);
-                    await _context.SaveChangesAsync();
+                    await ApiServices_.Update<TbThongTinHopTac>("/api/htqt/ThongTinHopTac", id, tbThongTinHopTac);
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!TbThongTinHopTacExists(tbThongTinHopTac.IdThongTinHopTac))
+                    if (await TbThongTinHopTacExists(tbThongTinHopTac.IdThongTinHopTac) == false)
                     {
                         return NotFound();
                     }
@@ -121,8 +129,8 @@ namespace PhanHeHTQT.Controllers.HTQT
                 }
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["IdHinhThucHopTac"] = new SelectList(_context.DmHinhThucHopTacs, "IdHinhThucHopTac", "IdHinhThucHopTac", tbThongTinHopTac.IdHinhThucHopTac);
-            ViewData["IdToChucHopTac"] = new SelectList(_context.TbToChucHopTacQuocTes, "IdToChucHopTacQuocTe", "IdToChucHopTacQuocTe", tbThongTinHopTac.IdToChucHopTac);
+            ViewData["IdHinhThucHopTac"] = new SelectList(await ApiServices_.GetAll<DmHinhThucHopTac>("/api/dm/HinhThucHopTac"), "IdHinhThucHopTac", "HinhThucHopTac", tbThongTinHopTac.IdHinhThucHopTac);
+            ViewData["IdToChucHopTac"] = new SelectList(await ApiServices_.GetAll<TbToChucHopTacQuocTe>("/api/htqt/ToChucHopTacQuocTe"), "IdToChucHopTacQuocTe", "ToChucHopTacQuocTe", tbThongTinHopTac.IdToChucHopTac);
             return View(tbThongTinHopTac);
         }
 
@@ -134,10 +142,8 @@ namespace PhanHeHTQT.Controllers.HTQT
                 return NotFound();
             }
 
-            var tbThongTinHopTac = await _context.TbThongTinHopTacs
-                .Include(t => t.IdHinhThucHopTacNavigation)
-                .Include(t => t.IdToChucHopTacNavigation)
-                .FirstOrDefaultAsync(m => m.IdThongTinHopTac == id);
+            var tbThongTinHopTacs = await ApiServices_.GetAll<TbThongTinHopTac>("/api/htqt/ThongTinHopTac");
+            var tbThongTinHopTac = tbThongTinHopTacs.FirstOrDefault(m => m.IdThongTinHopTac == id);
             if (tbThongTinHopTac == null)
             {
                 return NotFound();
@@ -151,19 +157,14 @@ namespace PhanHeHTQT.Controllers.HTQT
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var tbThongTinHopTac = await _context.TbThongTinHopTacs.FindAsync(id);
-            if (tbThongTinHopTac != null)
-            {
-                _context.TbThongTinHopTacs.Remove(tbThongTinHopTac);
-            }
-
-            await _context.SaveChangesAsync();
+            await ApiServices_.Delete<TbThongTinHopTac>("/api/htqt/ThongTinHopTac", id);
             return RedirectToAction(nameof(Index));
         }
 
-        private bool TbThongTinHopTacExists(int id)
+        private async Task<bool> TbThongTinHopTacExists(int id)
         {
-            return _context.TbThongTinHopTacs.Any(e => e.IdThongTinHopTac == id);
+            var tbThongTinHopTacs = await ApiServices_.GetAll<TbThongTinHopTac>("/api/htqt/ThongTinHopTac");
+            return tbThongTinHopTacs.Any(e => e.IdHinhThucHopTac == id);
         }
     }
 }

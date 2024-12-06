@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Build.Framework;
 using Microsoft.EntityFrameworkCore;
 using PhanHeHTQT.API;
 using PhanHeHTQT.Models;
@@ -38,8 +39,8 @@ namespace PhanHeHTQT.Controllers.HTQT
         // GET: TbThanhPhanThamGiaDoanCongTacs
         public async Task<IActionResult> Index()
         {
-            var hemisContext = _context.TbThanhPhanThamGiaDoanCongTacs.Include(t => t.IdCanBoNavigation).Include(t => t.IdDoanCongTacNavigation).Include(t => t.IdVaiTroThamGiaNavigation);
-            return View(await hemisContext.ToListAsync());
+            List<TbThanhPhanThamGiaDoanCongTac> getall = await TbThanhPhanThamGiaDoanCongTacs();
+            return View(getall);
         }
 
         // GET: TbThanhPhanThamGiaDoanCongTacs/Details/5
@@ -50,11 +51,8 @@ namespace PhanHeHTQT.Controllers.HTQT
                 return NotFound();
             }
 
-            var tbThanhPhanThamGiaDoanCongTac = await _context.TbThanhPhanThamGiaDoanCongTacs
-                .Include(t => t.IdCanBoNavigation)
-                .Include(t => t.IdDoanCongTacNavigation)
-                .Include(t => t.IdVaiTroThamGiaNavigation)
-                .FirstOrDefaultAsync(m => m.IdThanhPhanThamGiaDoanCongTac == id);
+            var tbThanhPhanThamGiaDoanCongTacs = await TbThanhPhanThamGiaDoanCongTacs();
+            var tbThanhPhanThamGiaDoanCongTac = tbThanhPhanThamGiaDoanCongTacs.FirstOrDefault(m => m.IdThanhPhanThamGiaDoanCongTac == id);
             if (tbThanhPhanThamGiaDoanCongTac == null)
             {
                 return NotFound();
@@ -64,11 +62,11 @@ namespace PhanHeHTQT.Controllers.HTQT
         }
 
         // GET: TbThanhPhanThamGiaDoanCongTacs/Create
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
-            ViewData["IdCanBo"] = new SelectList(_context.TbCanBos, "IdCanBo", "IdCanBo");
-            ViewData["IdDoanCongTac"] = new SelectList(_context.TbDoanCongTacs, "IdDoanCongTac", "IdDoanCongTac");
-            ViewData["IdVaiTroThamGia"] = new SelectList(_context.DmVaiTroThamGia, "IdVaiTroThamGia", "IdVaiTroThamGia");
+            ViewData["IdCanBo"] = new SelectList(await ApiServices_.GetAll<TbCanBo>("/api/cb/Canbo"), "IdCanBo", "CanBo");
+            ViewData["IdDoanCongTac"] = new SelectList(await ApiServices_.GetAll<TbDoanCongTac>("/api/htqt/DoanCongTac"), "IdDoanCongTac", "DoanCongTac");
+            ViewData["IdVaiTroThamGia"] = new SelectList(await ApiServices_.GetAll<DmVaiTroThamGium>("/api/dm/VaiTroThamGia"), "IdVaiTroThamGia", "VaiTroThamGia");
             return View();
         }
 
@@ -81,13 +79,13 @@ namespace PhanHeHTQT.Controllers.HTQT
         {
             if (ModelState.IsValid)
             {
-                _context.Add(tbThanhPhanThamGiaDoanCongTac);
-                await _context.SaveChangesAsync();
+                await ApiServices_.Create<TbThanhPhanThamGiaDoanCongTac>("/api/htqt/ThanhPhanThamGiaDoanCongTac", tbThanhPhanThamGiaDoanCongTac);
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["IdCanBo"] = new SelectList(_context.TbCanBos, "IdCanBo", "IdCanBo", tbThanhPhanThamGiaDoanCongTac.IdCanBo);
-            ViewData["IdDoanCongTac"] = new SelectList(_context.TbDoanCongTacs, "IdDoanCongTac", "IdDoanCongTac", tbThanhPhanThamGiaDoanCongTac.IdDoanCongTac);
-            ViewData["IdVaiTroThamGia"] = new SelectList(_context.DmVaiTroThamGia, "IdVaiTroThamGia", "IdVaiTroThamGia", tbThanhPhanThamGiaDoanCongTac.IdVaiTroThamGia);
+            ViewData["IdCanBo"] = new SelectList(await ApiServices_.GetAll<TbCanBo>("/api/cb/Canbo"), "IdCanBo", "CanBo", tbThanhPhanThamGiaDoanCongTac.IdCanBo);
+            ViewData["IdDoanCongTac"] = new SelectList(await ApiServices_.GetAll<TbDoanCongTac>("/api/htqt/DoanCongTac"), "IdDoanCongTac", "DoanCongTac", tbThanhPhanThamGiaDoanCongTac.IdDoanCongTac);
+            ViewData["IdVaiTroThamGia"] = new SelectList(await ApiServices_.GetAll<DmVaiTroThamGium>("/api/dm/VaiTroThamGia"), "IdVaiTroThamGia", "VaiTroThamGia", tbThanhPhanThamGiaDoanCongTac.IdVaiTroThamGia);
+
             return View(tbThanhPhanThamGiaDoanCongTac);
         }
 
@@ -99,14 +97,14 @@ namespace PhanHeHTQT.Controllers.HTQT
                 return NotFound();
             }
 
-            var tbThanhPhanThamGiaDoanCongTac = await _context.TbThanhPhanThamGiaDoanCongTacs.FindAsync(id);
+            var tbThanhPhanThamGiaDoanCongTac = await ApiServices_.GetId<TbThanhPhanThamGiaDoanCongTac>("/api/htqt/ThanhPhanThamGiaDoanCongtac", id ?? 0);
             if (tbThanhPhanThamGiaDoanCongTac == null)
             {
                 return NotFound();
             }
-            ViewData["IdCanBo"] = new SelectList(_context.TbCanBos, "IdCanBo", "IdCanBo", tbThanhPhanThamGiaDoanCongTac.IdCanBo);
-            ViewData["IdDoanCongTac"] = new SelectList(_context.TbDoanCongTacs, "IdDoanCongTac", "IdDoanCongTac", tbThanhPhanThamGiaDoanCongTac.IdDoanCongTac);
-            ViewData["IdVaiTroThamGia"] = new SelectList(_context.DmVaiTroThamGia, "IdVaiTroThamGia", "IdVaiTroThamGia", tbThanhPhanThamGiaDoanCongTac.IdVaiTroThamGia);
+            ViewData["IdCanBo"] = new SelectList(await ApiServices_.GetAll<TbCanBo>("/api/cb/Canbo"), "IdCanBo", "CanBo", tbThanhPhanThamGiaDoanCongTac.IdCanBo);
+            ViewData["IdDoanCongTac"] = new SelectList(await ApiServices_.GetAll<TbDoanCongTac>("/api/htqt/DoanCongTac"), "IdDoanCongTac", "DoanCongTac", tbThanhPhanThamGiaDoanCongTac.IdDoanCongTac);
+            ViewData["IdVaiTroThamGia"] = new SelectList(await ApiServices_.GetAll<DmVaiTroThamGium>("/api/dm/VaiTroThamGia"), "IdVaiTroThamGia", "VaiTroThamGia", tbThanhPhanThamGiaDoanCongTac.IdVaiTroThamGia);
             return View(tbThanhPhanThamGiaDoanCongTac);
         }
 
@@ -126,12 +124,11 @@ namespace PhanHeHTQT.Controllers.HTQT
             {
                 try
                 {
-                    _context.Update(tbThanhPhanThamGiaDoanCongTac);
-                    await _context.SaveChangesAsync();
+                    await ApiServices_.Update<TbThanhPhanThamGiaDoanCongTac>("/api/htqt/ThanhPhanThamGiaDoanCongTac", id, tbThanhPhanThamGiaDoanCongTac);
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!TbThanhPhanThamGiaDoanCongTacExists(tbThanhPhanThamGiaDoanCongTac.IdThanhPhanThamGiaDoanCongTac))
+                    if (await TbThanhPhanThamGiaDoanCongTacExists(tbThanhPhanThamGiaDoanCongTac.IdThanhPhanThamGiaDoanCongTac) == false)
                     {
                         return NotFound();
                     }
@@ -142,9 +139,9 @@ namespace PhanHeHTQT.Controllers.HTQT
                 }
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["IdCanBo"] = new SelectList(_context.TbCanBos, "IdCanBo", "IdCanBo", tbThanhPhanThamGiaDoanCongTac.IdCanBo);
-            ViewData["IdDoanCongTac"] = new SelectList(_context.TbDoanCongTacs, "IdDoanCongTac", "IdDoanCongTac", tbThanhPhanThamGiaDoanCongTac.IdDoanCongTac);
-            ViewData["IdVaiTroThamGia"] = new SelectList(_context.DmVaiTroThamGia, "IdVaiTroThamGia", "IdVaiTroThamGia", tbThanhPhanThamGiaDoanCongTac.IdVaiTroThamGia);
+            ViewData["IdCanBo"] = new SelectList(await ApiServices_.GetAll<TbCanBo>("/api/cb/Canbo"), "IdCanBo", "CanBo", tbThanhPhanThamGiaDoanCongTac.IdCanBo);
+            ViewData["IdDoanCongTac"] = new SelectList(await ApiServices_.GetAll<TbDoanCongTac>("/api/htqt/DoanCongTac"), "IdDoanCongTac", "DoanCongTac", tbThanhPhanThamGiaDoanCongTac.IdDoanCongTac);
+            ViewData["IdVaiTroThamGia"] = new SelectList(await ApiServices_.GetAll<DmVaiTroThamGium>("/api/dm/VaiTroThamGia"), "IdVaiTroThamGia", "VaiTroThamGia", tbThanhPhanThamGiaDoanCongTac.IdVaiTroThamGia);
             return View(tbThanhPhanThamGiaDoanCongTac);
         }
 
@@ -156,11 +153,8 @@ namespace PhanHeHTQT.Controllers.HTQT
                 return NotFound();
             }
 
-            var tbThanhPhanThamGiaDoanCongTac = await _context.TbThanhPhanThamGiaDoanCongTacs
-                .Include(t => t.IdCanBoNavigation)
-                .Include(t => t.IdDoanCongTacNavigation)
-                .Include(t => t.IdVaiTroThamGiaNavigation)
-                .FirstOrDefaultAsync(m => m.IdThanhPhanThamGiaDoanCongTac == id);
+            var tbThanhPhanThamGiaDoanCongTacs = await ApiServices_.GetAll<TbThanhPhanThamGiaDoanCongTac>("/api/htqt/ThanhPhanThamGiaDoanCongTac");
+            var tbThanhPhanThamGiaDoanCongTac = tbThanhPhanThamGiaDoanCongTacs.FirstOrDefault(m => m.IdThanhPhanThamGiaDoanCongTac == id);
             if (tbThanhPhanThamGiaDoanCongTac == null)
             {
                 return NotFound();
@@ -174,19 +168,14 @@ namespace PhanHeHTQT.Controllers.HTQT
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var tbThanhPhanThamGiaDoanCongTac = await _context.TbThanhPhanThamGiaDoanCongTacs.FindAsync(id);
-            if (tbThanhPhanThamGiaDoanCongTac != null)
-            {
-                _context.TbThanhPhanThamGiaDoanCongTacs.Remove(tbThanhPhanThamGiaDoanCongTac);
-            }
-
-            await _context.SaveChangesAsync();
+            await ApiServices_.Delete<TbThanhPhanThamGiaDoanCongTac>("/api/htqt/ThanhPhanThamGiaDoanCongTac", id);
             return RedirectToAction(nameof(Index));
         }
 
-        private bool TbThanhPhanThamGiaDoanCongTacExists(int id)
+        private async Task<bool> TbThanhPhanThamGiaDoanCongTacExists(int id)
         {
-            return _context.TbThanhPhanThamGiaDoanCongTacs.Any(e => e.IdThanhPhanThamGiaDoanCongTac == id);
+            var tbThanhPhanThamGiaDoanCongTacs = await ApiServices_.GetAll<TbThanhPhanThamGiaDoanCongTac>("/api/htqt/ThanhPhanThamGiaDoanCongTac");
+            return tbThanhPhanThamGiaDoanCongTacs.Any(e => e.IdThanhPhanThamGiaDoanCongTac == id);
         }
     }
 }
